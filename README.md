@@ -25,7 +25,7 @@ residuos y no publica datos personales de quien reporta.
 | Programa | Version |
 |---|---|
 | Node.js | 18 o superior, probado con la 24.21 |
-| MySQL | 8.0 o superior, motor InnoDB y utf8mb4 |
+| MySQL | 8.0.46, motor InnoDB y utf8mb4 |
 | Navegador | Chrome, Edge o Firefox actualizado |
 
 ## Estructura del repositorio
