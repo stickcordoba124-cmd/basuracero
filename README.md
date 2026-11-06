@@ -24,8 +24,8 @@ residuos y no publica datos personales de quien reporta.
 
 | Programa | Version |
 |---|---|
-| Node.js | 18 o superior |
-| MySQL | 8.0 o superior |
+| Node.js | 20 o superior |
+| MySQL | 8.0.46 |
 | Navegador | Chrome, Edge o Firefox actualizado |
 
 ## Estructura del repositorio
