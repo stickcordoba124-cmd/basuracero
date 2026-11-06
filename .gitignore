@@ -1,0 +1,35 @@
+# ============================================================
+# BasuraCero. Archivos que no entran al repositorio
+# Stack: React con Vite en el frontend y Node.js con Express
+# en el backend.
+# ============================================================
+
+# Dependencias. Se reconstruyen con npm install y pesan mas
+# que todo el codigo junto.
+node_modules/
+
+# Variables de entorno. Llevan la contrasena de MySQL y el
+# secreto de los tokens. Se versiona .env.example en su lugar.
+.env
+.env.local
+.env.*.local
+
+# Resultado de compilar
+dist/
+build/
+.vite/
+
+# Registros
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
