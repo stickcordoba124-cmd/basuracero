@@ -6,7 +6,7 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { pool } = require('../src/config/database');
 
-const COSTO = 10;
+const COSTO = 4;
 
 async function principal() {
   const clave = process.env.SEMILLA_PASSWORD;
