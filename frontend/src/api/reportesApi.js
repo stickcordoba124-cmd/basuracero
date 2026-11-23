@@ -1,32 +1,43 @@
 /* Consultas y acciones sobre los reportes.
    Las pantallas llaman estas funciones y no conocen de donde
-   sale la informacion. */
+   sale la informacion.
+
+   Mientras no exista el servidor, los reportes viven en la lista
+   de abajo. Arranca con los datos de prueba y los reportes nuevos
+   se agregan ahi, para que al enviar uno se vea de una en el mapa
+   y en el historial. Se pierden al recargar la pagina, porque no
+   hay base de datos todavia: eso lo resuelve el backend. */
 import {
-  REPORTES, POR_VERIFICAR, RESUMEN, RESUMEN_FUNCIONARIO, GRUPOS,
+  REPORTES, POR_VERIFICAR, RESUMEN, RESUMEN_FUNCIONARIO, GRUPOS, CATEGORIAS,
 } from '../data/datosDemo.js';
 import { pedir, SIMULAR_FALLO, ERROR_RED } from './clienteDatos.js';
 
 const falla = () => (SIMULAR_FALLO ? { fallar: ERROR_RED } : {});
 
+/* Copia de trabajo. No se toca el archivo de datos de prueba. */
+const reportes = [...REPORTES];
+
 /** Reportes visibles en el mapa del municipio. */
-export const listarReportes = () => pedir(REPORTES, falla());
+export const listarReportes = () => pedir([...reportes], falla());
 
 /** Reportes enviados por un ciudadano. */
 export const listarMisReportes = (idUsuario) =>
-  pedir(REPORTES.filter((r) => r.id_usuario === idUsuario), falla());
+  pedir(reportes.filter((r) => r.id_usuario === idUsuario), falla());
 
 /** Los tres reportes mas recientes, para la pantalla de inicio. */
-export const listarRecientes = () => pedir(REPORTES.slice(0, 3), falla());
+export const listarRecientes = () => pedir(reportes.slice(0, 3), falla());
 
 /** Un reporte por su identificador. Devuelve null si no existe. */
 export const obtenerReporte = (id) =>
-  pedir(REPORTES.find((r) => String(r.id_reporte) === String(id)) ?? null, falla());
+  pedir(reportes.find((r) => String(r.id_reporte) === String(id)) ?? null, falla());
 
-/** Contadores del municipio. */
-export const obtenerResumen = () => pedir(RESUMEN, falla());
+/** Contadores del municipio. Los pendientes suben con cada reporte nuevo. */
+export const obtenerResumen = () =>
+  pedir({ ...RESUMEN, pendientes: RESUMEN.pendientes + nuevos }, falla());
 
 /** Contadores del funcionario. */
-export const obtenerResumenFuncionario = () => pedir(RESUMEN_FUNCIONARIO, falla());
+export const obtenerResumenFuncionario = () =>
+  pedir({ ...RESUMEN_FUNCIONARIO, pendientes: RESUMEN_FUNCIONARIO.pendientes + nuevos }, falla());
 
 /** Bandeja de reportes que el funcionario todavia no ha verificado. */
 export const listarPorVerificar = () => pedir(POR_VERIFICAR, falla());
@@ -38,6 +49,23 @@ export const listarGrupos = () => pedir(GRUPOS, falla());
    de ck_reporte_estado que no corresponden a un caso cerrado. */
 const ABIERTOS = ['recibido', 'en verificacion', 'programado', 'en ejecucion'];
 
+let nuevos = 0;
+
+const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+function fechaDeHoy() {
+  const h = new Date();
+  return `${String(h.getDate()).padStart(2, '0')} ${MESES[h.getMonth()]}, ${h.getFullYear()}`;
+}
+
+/* Titulo automatico a partir de la categoria. El formulario no pide
+   titulo, y en la base de datos tampoco existe esa columna: la lista
+   lo arma con la categoria, igual que la consulta del RF.004. */
+function tituloDe(categoria) {
+  const etiqueta = CATEGORIAS.find((c) => c.valor === categoria)?.etiqueta ?? 'Residuo';
+  return `Punto de ${etiqueta.toLowerCase()} reportado`;
+}
+
 /**
  * Crea un reporte.
  *
@@ -46,9 +74,13 @@ const ABIERTOS = ['recibido', 'en verificacion', 'programado', 'en ejecucion'];
  * responde con 409 desde reporte.service.js. Aqui se comprueba antes
  * de enviar, para que el ciudadano se entere en el formulario y no
  * despues.
+ *
+ * La regla es por ciudadano, no por punto. Si otro vecino reporta la
+ * misma direccion, el reporte entra: el RF.006 le deja al funcionario
+ * la tarea de confirmar o descartar los repetidos.
  */
 export function crearReporte(datos) {
-  const repetido = REPORTES.some(
+  const repetido = reportes.some(
     (r) => r.id_usuario === datos.id_usuario
       && r.direccion.trim().toLowerCase() === datos.direccion.trim().toLowerCase()
       && ABIERTOS.includes(r.estado),
@@ -58,5 +90,34 @@ export function crearReporte(datos) {
       fallar: 'Ya tienes un reporte abierto en esta direccion. Revisa Mis reportes antes de enviar otro.',
     });
   }
-  return pedir({ ...datos, id_reporte: REPORTES.length + 1, estado: 'recibido' });
+
+  nuevos += 1;
+  const fecha = fechaDeHoy();
+  const reporte = {
+    id_reporte: 100 + nuevos,
+    id_usuario: datos.id_usuario,
+    autor: datos.autor,
+    titulo: tituloDe(datos.categoria),
+    direccion: datos.direccion.trim(),
+    categoria_residuo: datos.categoria,
+    nivel_situacion: datos.nivel,
+    estado: 'recibido',
+    fecha_creacion: fecha,
+    latitud: null,
+    longitud: null,
+    /* Posicion en el lienzo del mapa. Se reparte para que los
+       reportes nuevos no caigan todos en el mismo punto. */
+    x: 20 + ((nuevos * 23) % 60),
+    y: 20 + ((nuevos * 31) % 60),
+    descripcion: datos.descripcion.trim(),
+    seguimiento: [
+      { titulo: 'Reportado por ciudadano', fecha, hecho: true },
+      { titulo: 'En revision de viabilidad', fecha: 'Pendiente', hecho: false },
+      { titulo: 'Programado para retiro', fecha: 'Pendiente', hecho: false },
+      { titulo: 'Resuelto y limpio', fecha: 'Pendiente', hecho: false },
+    ],
+  };
+
+  reportes.unshift(reporte);
+  return pedir(reporte);
 }

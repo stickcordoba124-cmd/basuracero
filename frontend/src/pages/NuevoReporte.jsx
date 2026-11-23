@@ -50,7 +50,7 @@ export default function NuevoReporte() {
   const f = useFormulario(INICIAL, validar);
 
   const enviar = f.enviar(async (v) => {
-    await crearReporte({ ...v, id_usuario: usuario.id_usuario });
+    await crearReporte({ ...v, id_usuario: usuario.id_usuario, autor: usuario.nombre });
     navegar('/confirmacion', { state: { direccion: v.direccion } });
   });
 
