@@ -39,8 +39,23 @@ export const obtenerResumen = () =>
 export const obtenerResumenFuncionario = () =>
   pedir({ ...RESUMEN_FUNCIONARIO, pendientes: RESUMEN_FUNCIONARIO.pendientes + nuevos }, falla());
 
-/** Bandeja de reportes que el funcionario todavia no ha verificado. */
-export const listarPorVerificar = () => pedir(POR_VERIFICAR, falla());
+/* Bandeja del funcionario. Son los reportes que todavia estan en
+   estado recibido, o sea los que nadie ha verificado. Los que llegan
+   durante la sesion entran de primeros, porque son los mas nuevos.
+   Es lo que pide el RF.006: el funcionario confirma o descarta lo
+   que va entrando. */
+export const listarPorVerificar = () => {
+  const recientes = reportes
+    .filter((r) => r.estado === 'recibido' && r.id_reporte > 100)
+    .map((r) => ({
+      id_reporte: r.id_reporte,
+      titulo: r.titulo,
+      direccion: r.direccion,
+      hace: 'hace un momento',
+      estado: r.estado,
+    }));
+  return pedir([...recientes, ...POR_VERIFICAR], falla());
+};
 
 /** Grupos de limpieza disponibles. */
 export const listarGrupos = () => pedir(GRUPOS, falla());
