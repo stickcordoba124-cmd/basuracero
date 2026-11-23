@@ -1,4 +1,4 @@
-import { etiquetaDeEstado, claseDeEtiqueta } from '../data/datosDemo.js';
+import { etiquetaDeEstado, claseDeEtiqueta } from '../../data/datosDemo.js';
 
 /* Etiqueta de estado. Ningun estado se comunica solo con color:
    siempre lleva su palabra, como se justifico en el prototipo. */

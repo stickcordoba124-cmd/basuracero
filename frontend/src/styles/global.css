@@ -611,3 +611,89 @@ p  { font-size: 14px; line-height: 1.5; margin: 0 0 10px; }
   font-size: 13px;
   padding: 28px 10px;
 }
+
+/* ============================================================
+   Clases agregadas en la evidencia GA7-220501096-AA4-EV01
+
+   Salieron de la lista de chequeo: varias pantallas tenian el
+   estilo escrito dentro del JSX con style={{...}}, y los colores
+   del mapa estaban en un objeto de JavaScript. Aqui quedan como
+   clases, que es lo que pide el estandar del plan tecnico.
+   ============================================================ */
+
+/* Campos obligatorios */
+.obligatorio { color: var(--naranja); font-weight: 700; }
+
+/* Estados de carga, error y vacio */
+.punto-carga {
+  display: inline-block;
+  width: 10px; height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--verde);
+  animation: latido 1s ease-in-out infinite;
+}
+@keyframes latido {
+  0%, 100% { opacity: .25; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .punto-carga { animation: none; opacity: .6; }
+}
+
+.boton:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Pestana activa de la barra inferior */
+.pestana-activa { color: var(--verde); font-weight: 700; }
+.pestana-icono { font-size: 18px; }
+
+/* Pines y leyenda del mapa */
+.pin-pendiente { color: var(--naranja); }
+.pin-proceso { color: var(--gris-medio); }
+.pin-atendido { color: var(--verde); }
+.punto-pendiente { background: var(--naranja); }
+.punto-proceso { background: var(--gris-medio); }
+.punto-atendido { background: var(--verde); }
+.leyenda-titulo { width: 100%; font-size: 13px; }
+
+/* Bloques que antes llevaban estilo en linea */
+.pila-botones { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; width: 100%; }
+.centro-pantalla { padding-top: 40px; text-align: center; }
+.logo-grande { width: 72px; height: 72px; font-size: 34px; margin: 0 auto 16px; }
+.nota-campo { margin-top: -6px; }
+.nota-demo { margin-top: 18px; }
+.seccion-inicio { margin-top: 14px; }
+.seccion-lista { padding-top: 14px; }
+.lista-reportes { margin-top: 12px; }
+.titulo-bloque { margin-top: 16px; }
+.icono-foto { font-size: 26px; }
+
+.cabecera-saludo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-bottom: 18px;
+}
+.saludo { margin: 0; font-size: 13px; color: #C9E3D4; }
+.cabecera-funcionario { padding-top: 16px; padding-bottom: 16px; }
+.titulo-funcionario { font-size: 17px; }
+.cargo { margin: 0; font-size: 12px; color: #D6EEE0; }
+
+.fila-avatar { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+.nombre-perfil { margin-bottom: 2px; }
+.cargo-perfil { margin: 0; }
+
+.fila-etiquetas { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.etiqueta-nivel { background: #FFE3D4; color: #8A3C10; }
+.etiqueta-categoria { background: var(--verde-claro); color: var(--verde-oscuro); }
+.autor { color: var(--verde); }
+.foto-detalle {
+  height: 170px;
+  background: var(--verde-claro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fila-tarjeta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.titulo-caso { margin-bottom: 2px; }
