@@ -1,7 +1,12 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Contadores from '../components/Contadores.jsx';
-import { POR_VERIFICAR, RESUMEN_FUNCIONARIO, FUNCIONARIO, GRUPOS } from '../data/datosDemo.js';
+import Contadores from '../components/basuracero/Contadores.jsx';
+import Boton from '../components/comunes/Boton.jsx';
+import Aviso from '../components/comunes/Aviso.jsx';
+import { Cargando, ErrorCarga, SinResultados } from '../components/comunes/Estados.jsx';
+import usePeticion from '../hooks/usePeticion.js';
+import useVerificacion from '../hooks/useVerificacion.js';
+import { useSesion } from '../context/SesionContext.jsx';
+import { listarPorVerificar, listarGrupos, obtenerResumenFuncionario } from '../api/reportesApi.js';
 
 /* Flujo alterno del mapa de navegacion. Panel del funcionario.
 
@@ -11,82 +16,67 @@ import { POR_VERIFICAR, RESUMEN_FUNCIONARIO, FUNCIONARIO, GRUPOS } from '../data
    blanco para descartar y naranja para asignar. */
 export default function PanelFuncionario() {
   const navegar = useNavigate();
-  const [casos, setCasos] = useState(
-    POR_VERIFICAR.map((c) => ({ ...c, decision: null, grupo: '', asignado: false }))
-  );
-  const [aviso, setAviso] = useState('');
+  const { usuario, cerrarSesion } = useSesion();
 
-  function decidir(id, decision) {
-    setCasos((cs) => cs.map((c) => (c.id_reporte === id ? { ...c, decision } : c)));
-    setAviso(decision === 'aprobado'
-      ? `Reporte ${id} aprobado. Ya puede asignar el grupo de limpieza.`
-      : `Reporte ${id} descartado. Se notificara al ciudadano.`);
+  const bandeja = usePeticion(listarPorVerificar);
+  const grupos = usePeticion(listarGrupos);
+  const resumen = usePeticion(obtenerResumenFuncionario);
+
+  const v = useVerificacion(bandeja.datos, grupos.datos);
+  const iniciales = usuario.nombre.split(' ').map((p) => p[0]).join('').slice(0, 2);
+
+  function salir() {
+    cerrarSesion();
+    navegar('/login', { replace: true });
   }
-
-  function cambiarGrupo(id, grupo) {
-    setCasos((cs) => cs.map((c) => (c.id_reporte === id ? { ...c, grupo } : c)));
-  }
-
-  function asignar(id) {
-    const caso = casos.find((c) => c.id_reporte === id);
-    if (!caso.grupo) { setAviso('Elija primero el grupo de limpieza.'); return; }
-    setCasos((cs) => cs.map((c) => (c.id_reporte === id ? { ...c, asignado: true } : c)));
-    const nombre = GRUPOS.find((g) => String(g.id_grupo) === String(caso.grupo))?.nombre_grupo;
-    setAviso(`Reporte ${id} asignado a ${nombre}. El estado pasa a programado.`);
-  }
-
-  const pendientes = casos.filter((c) => c.decision === null || !c.asignado);
 
   return (
     <div className="cuerpo" id="contenido">
-      <header className="cabecera" style={{ paddingTop: 16, paddingBottom: 16 }}>
-        <span className="avatar" aria-hidden="true">CR</span>
+      <header className="cabecera cabecera-funcionario">
+        <span className="avatar" aria-hidden="true">{iniciales}</span>
         <div>
-          <h1 style={{ fontSize: 17 }}>{FUNCIONARIO.nombre}</h1>
-          <p style={{ margin: 0, fontSize: 12, color: '#D6EEE0' }}>Funcionario de aseo municipal</p>
+          <h1 className="titulo-funcionario">{usuario.nombre}</h1>
+          <p className="cargo">Funcionario de aseo municipal</p>
         </div>
       </header>
 
-      <div className="seccion" style={{ paddingTop: 14 }}>
-        <Contadores datos={RESUMEN_FUNCIONARIO} />
+      <div className="seccion seccion-lista">
+        {resumen.cargando && <Cargando texto="Cargando los contadores..." />}
+        {resumen.error && <ErrorCarga mensaje={resumen.error} alReintentar={resumen.reintentar} />}
+        {resumen.datos && <Contadores datos={resumen.datos} />}
 
         <div aria-live="polite" role="status">
-          {aviso && (
-            <div className="aviso aviso-verde" style={{ marginTop: 14, marginBottom: 0 }}>
-              <span aria-hidden="true">&#8505;</span>
-              <div><p>{aviso}</p></div>
-            </div>
-          )}
+          {v.aviso && <Aviso tono="exito"><p>{v.aviso}</p></Aviso>}
         </div>
 
         <h2 className="titulo-seccion">Reportes por verificar</h2>
 
-        {pendientes.length === 0 && (
-          <p className="vacio">No quedan reportes por verificar.</p>
+        {bandeja.cargando && <Cargando texto="Cargando la bandeja..." />}
+        {bandeja.error && <ErrorCarga mensaje={bandeja.error} alReintentar={bandeja.reintentar} />}
+        {!bandeja.cargando && !bandeja.error && v.pendientes.length === 0 && (
+          <SinResultados texto="No quedan reportes por verificar." />
         )}
 
-        {casos.map((c) => (
+        {v.casos.map((c) => (
           <article key={c.id_reporte} className="tarjeta-verificar">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div className="fila-tarjeta">
               <span className={c.decision === 'descartado' ? 'etiqueta etiqueta-proceso' : 'etiqueta etiqueta-pendiente'}>
                 {c.decision ? c.decision.toUpperCase() : 'PENDIENTE'}
               </span>
               <span className="apoyo">{c.hace}</span>
             </div>
 
-            <h3 style={{ marginBottom: 2 }}>{c.titulo}</h3>
+            <h3 className="titulo-caso">{c.titulo}</h3>
             <p className="tarjeta-lugar">{c.direccion}</p>
 
             {c.decision === null && (
               <div className="fila-acciones">
-                <button type="button" className="boton boton-blanco"
-                        onClick={() => decidir(c.id_reporte, 'descartado')}>
+                <Boton color="blanco" onClick={() => v.decidir(c.id_reporte, 'descartado')}>
                   Descartar
-                </button>
-                <button type="button" className="boton boton-verde"
-                        onClick={() => decidir(c.id_reporte, 'aprobado')}>
+                </Boton>
+                <Boton onClick={() => v.decidir(c.id_reporte, 'aprobado')}>
                   Aprobar
-                </button>
+                </Boton>
               </div>
             )}
 
@@ -97,33 +87,29 @@ export default function PanelFuncionario() {
                 </label>
                 <select
                   id={`grupo-${c.id_reporte}`}
+                  name={`grupo-${c.id_reporte}`}
                   value={c.grupo}
-                  onChange={(e) => cambiarGrupo(c.id_reporte, e.target.value)}
+                  onChange={(e) => v.elegirGrupo(c.id_reporte, e.target.value)}
                 >
                   <option value="">Elegir grupo de limpieza</option>
-                  {GRUPOS.map((g) => (
+                  {(grupos.datos ?? []).map((g) => (
                     <option key={g.id_grupo} value={g.id_grupo}>{g.nombre_grupo}</option>
                   ))}
                 </select>
-                <button type="button" className="boton boton-naranja"
-                        onClick={() => asignar(c.id_reporte)}>
-                  Asignar
-                </button>
+                <Boton color="naranja" onClick={() => v.asignar(c.id_reporte)}>Asignar</Boton>
               </div>
             )}
 
             {c.asignado && (
-              <p className="apoyo" style={{ marginTop: 10, marginBottom: 0 }}>
-                Asignado a {GRUPOS.find((g) => String(g.id_grupo) === String(c.grupo))?.nombre_grupo}
+              <p className="apoyo nota-campo">
+                Asignado a {(grupos.datos ?? []).find((g) => String(g.id_grupo) === String(c.grupo))?.nombre_grupo}
               </p>
             )}
           </article>
         ))}
 
-        <div style={{ marginTop: 16, marginBottom: 20 }}>
-          <button type="button" className="boton boton-blanco" onClick={() => navegar('/login')}>
-            Cerrar sesion
-          </button>
+        <div className="pila-botones">
+          <Boton color="blanco" onClick={salir}>Cerrar sesion</Boton>
         </div>
       </div>
     </div>

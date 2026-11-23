@@ -8,6 +8,17 @@
    son los mismos de la base de datos aprobada en la evidencia
    GA6-220501096-AA2-EV01, para que al conectar el backend no
    haya que renombrar nada.
+
+   CASOS QUE CUBREN ESTOS DATOS
+   Caso normal: los reportes 1, 2, 3 y 4, con los tres estados que
+   ve el ciudadano y categorias distintas.
+   Caso limite: el reporte 7, con nivel 5 critico, el mas alto que
+   acepta ck_reporte_nivel, y la descripcion en el maximo de 500
+   caracteres que permite el campo.
+   Caso de error: el reporte 1 esta abierto en la misma direccion
+   que trae por defecto el formulario de nuevo reporte, asi que al
+   enviarlo sin cambiar la direccion se dispara la REGLA 1 y se ve
+   el mensaje de error del formulario.
    ============================================================ */
 
 /* Las ocho categorias que acepta la restriccion ck_reporte_categoria */
@@ -79,6 +90,32 @@ export const GRUPOS = [
 ];
 
 export const REPORTES = [
+  /* CASO LIMITE. Nivel 5, el mas alto de ck_reporte_nivel, con la
+     descripcion en el tope de 500 caracteres del campo. Sirve para
+     comprobar que el texto largo no rompe la tarjeta ni el detalle. */
+  {
+    id_reporte: 7,
+    id_usuario: 1,
+    autor: 'Jefferson Murillo',
+    titulo: 'Residuos hospitalarios a cielo abierto',
+    direccion: 'Carrera 12 #4-10, salida al matadero',
+    categoria_residuo: 'peligroso',
+    nivel_situacion: 5,
+    estado: 'en verificacion',
+    fecha_creacion: '18 Nov, 2026',
+    latitud: 4.529,
+    longitud: -75.689,
+    x: 16,
+    y: 22,
+    descripcion:
+      'Bolsas rojas de residuos hospitalarios abandonadas en el lote baldio que queda a la salida del matadero municipal, al lado de la via por donde pasan los ninos del colegio. Hay jeringas y material de curacion a la vista, sin ninguna señalizacion y sin cerramiento. Los perros de la zona rompen las bolsas durante la noche y dejan el material regado sobre el anden y la calzada. Los vecinos llevan tres dias llamando a la linea de la alcaldia y nadie ha venido. Se necesita manejo especial de residuo peligroso, no el camion de basura comun, y se recomienda cerrar el paso mientras llega la brigada.',
+    seguimiento: [
+      { titulo: 'Reportado por ciudadano', fecha: '18 Nov, 2026 - 06:12', hecho: true },
+      { titulo: 'En revision de viabilidad', fecha: '18 Nov, 2026 - 09:30', hecho: true },
+      { titulo: 'Programado para retiro', fecha: 'Pendiente', hecho: false },
+      { titulo: 'Resuelto y limpio', fecha: 'Pendiente', hecho: false },
+    ],
+  },
   {
     id_reporte: 1,
     id_usuario: 1,
